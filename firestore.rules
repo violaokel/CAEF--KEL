@@ -58,8 +58,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && 
-             request.auth.token.email == "violaokel@gmail.com" && 
-             request.auth.token.email_verified == true;
+             request.auth.token.email == "violaokel@gmail.com";
     }
 
     function isValidMenu(data) {
@@ -110,29 +109,29 @@ service cloud.firestore {
     }
 
     match /menu/{menuId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin() && isValidMenu(request.resource.data);
     }
 
     match /schools/{schoolId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin() && isValidSchool(request.resource.data);
     }
 
     match /notices/{noticeId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create: if isAdmin() && isValidNotice(request.resource.data);
       allow update: if isAdmin() && isValidNotice(request.resource.data);
       allow delete: if isAdmin();
     }
 
     match /settings/schedule {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin() && isValidSchedule(request.resource.data);
     }
 
     match /birthdays/{birthdayId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin() && isValidBirthday(request.resource.data);
     }
 

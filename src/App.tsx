@@ -9,10 +9,10 @@ import {
 } from './firebase';
 import { 
   onAuthStateChanged, 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  User
+  signOut, 
+  User,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { 
   doc, 
@@ -1093,10 +1093,8 @@ export default function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState('home');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -1126,26 +1124,28 @@ export default function App() {
     return unsub;
   }, []);
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAuth = async () => {
+    if (isAuthenticating) return;
+    
     setError('');
+    setIsAuthenticating(true);
+    
+    const provider = new GoogleAuthProvider();
     try {
-      if (isRegistering) {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
+      await signInWithPopup(auth, provider);
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('E-mail ou senha incorretos.');
-      } else if (err.code === 'auth/email-already-in-use') {
-        setError('Este e-mail já está em uso.');
-      } else if (err.code === 'auth/weak-password') {
-        setError('A senha deve ter pelo menos 6 caracteres.');
+      if (err.code === 'auth/cancelled-popup-request') {
+        // Ignore this error as it just means a previous request was cancelled
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        setError('A janela de login foi fechada antes de completar.');
+      } else if (err.code === 'auth/blocked-at-iframe') {
+        setError('O login foi bloqueado pelo navegador. Tente abrir o app em uma nova aba.');
       } else {
-        setError('Ocorreu um erro ao tentar entrar. Verifique se o login por e-mail está ativado no Firebase.');
+        setError('Ocorreu um erro ao tentar entrar com o Google.');
       }
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
@@ -1176,46 +1176,32 @@ export default function App() {
           <div className="w-20 h-20 bg-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-lg shadow-emerald-200">
             <Utensils className="text-white w-10 h-10" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight text-center">Merenda Escolar</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight text-center">CAEF</h1>
           <p className="text-gray-500 mb-8 leading-relaxed text-center">
-            {isRegistering ? 'Crie sua conta para começar.' : 'Entre para gerenciar a cozinha.'}
+            Controle de Cozinha
           </p>
 
-          <form onSubmit={handleAuth} className="flex flex-col gap-4">
-            <Input 
-              label="E-mail" 
-              type="email" 
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input 
-              label="Senha" 
-              type="password" 
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          <div className="flex flex-col gap-4">
+            <Button 
+              onClick={handleAuth} 
+              className="w-full py-4 text-lg mt-2"
+              disabled={isAuthenticating}
+            >
+              {isAuthenticating ? (
+                <>Carregando...</>
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5" /> Entrar com Google
+                </>
+              )}
+            </Button>
             
             {error && (
-              <p className="text-rose-500 text-sm font-medium text-center bg-rose-50 py-2 rounded-xl border border-rose-100">
+              <p className="text-rose-500 text-sm font-medium text-center bg-rose-50 py-2 rounded-xl border border-rose-100 mt-4">
                 {error}
               </p>
             )}
-
-            <Button type="submit" className="w-full py-4 text-lg mt-2">
-              <LogIn className="w-5 h-5" /> {isRegistering ? 'Criar Conta' : 'Entrar'}
-            </Button>
-          </form>
-
-          <button 
-            onClick={() => setIsRegistering(!isRegistering)}
-            className="w-full mt-6 text-emerald-600 font-semibold text-sm hover:underline"
-          >
-            {isRegistering ? 'Já tem uma conta? Entre aqui' : 'Não tem uma conta? Cadastre-se'}
-          </button>
+          </div>
         </motion.div>
       </div>
     );
