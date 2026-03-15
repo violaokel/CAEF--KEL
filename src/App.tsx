@@ -9,8 +9,8 @@ import {
 } from './firebase';
 import { 
   onAuthStateChanged, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
   User
 } from 'firebase/auth';
@@ -1093,6 +1093,10 @@ export default function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState('home');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -1122,12 +1126,26 @@ export default function App() {
     return unsub;
   }, []);
 
-  const handleLogin = async () => {
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (err) {
+      if (isRegistering) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (err: any) {
       console.error(err);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('E-mail ou senha incorretos.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('Este e-mail já está em uso.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('A senha deve ter pelo menos 6 caracteres.');
+      } else {
+        setError('Ocorreu um erro ao tentar entrar. Verifique se o login por e-mail está ativado no Firebase.');
+      }
     }
   };
 
@@ -1149,7 +1167,7 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-emerald-50 flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-emerald-50 flex flex-col items-center justify-center p-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1158,13 +1176,46 @@ export default function App() {
           <div className="w-20 h-20 bg-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-lg shadow-emerald-200">
             <Utensils className="text-white w-10 h-10" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight">Merenda Escolar</h1>
-          <p className="text-gray-500 mb-10 leading-relaxed">
-            Controle de cozinha e organização da produção de merenda escolar.
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight text-center">Merenda Escolar</h1>
+          <p className="text-gray-500 mb-8 leading-relaxed text-center">
+            {isRegistering ? 'Crie sua conta para começar.' : 'Entre para gerenciar a cozinha.'}
           </p>
-          <Button onClick={handleLogin} className="w-full py-4 text-lg">
-            <LogIn className="w-5 h-5" /> Entrar com Google
-          </Button>
+
+          <form onSubmit={handleAuth} className="flex flex-col gap-4">
+            <Input 
+              label="E-mail" 
+              type="email" 
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Input 
+              label="Senha" 
+              type="password" 
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            
+            {error && (
+              <p className="text-rose-500 text-sm font-medium text-center bg-rose-50 py-2 rounded-xl border border-rose-100">
+                {error}
+              </p>
+            )}
+
+            <Button type="submit" className="w-full py-4 text-lg mt-2">
+              <LogIn className="w-5 h-5" /> {isRegistering ? 'Criar Conta' : 'Entrar'}
+            </Button>
+          </form>
+
+          <button 
+            onClick={() => setIsRegistering(!isRegistering)}
+            className="w-full mt-6 text-emerald-600 font-semibold text-sm hover:underline"
+          >
+            {isRegistering ? 'Já tem uma conta? Entre aqui' : 'Não tem uma conta? Cadastre-se'}
+          </button>
         </motion.div>
       </div>
     );
