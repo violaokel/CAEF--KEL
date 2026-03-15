@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "menu": {
+      "title": "Cardápio",
+      "description": "Itens do cardápio semanal",
+      "type": "object",
+      "properties": {
+        "dayOfWeek": { "type": "string", "description": "Dia da semana (Segunda a Sexta)" },
+        "mainDish": { "type": "string", "description": "Prato principal" },
+        "sideDish": { "type": "string", "description": "Acompanhamento" },
+        "dessert": { "type": "string", "description": "Bebida ou sobremesa" }
+      },
+      "required": ["dayOfWeek", "mainDish"]
+    },
+    "school": {
+      "title": "Escola",
+      "description": "Informações da escola e quantidade de alunos",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Nome da escola" },
+        "morningCount": { "type": "integer", "description": "Alunos no turno matutino" },
+        "afternoonCount": { "type": "integer", "description": "Alunos no turno vespertino" },
+        "nightCount": { "type": "integer", "description": "Alunos no turno noturno" }
+      },
+      "required": ["name"]
+    },
+    "notice": {
+      "title": "Aviso",
+      "description": "Avisos da cozinha",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Título do aviso" },
+        "content": { "type": "string", "description": "Conteúdo do aviso" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação" },
+        "authorId": { "type": "string", "description": "ID do administrador que postou" }
+      },
+      "required": ["title", "content", "createdAt"]
+    },
+    "schedule": {
+      "title": "Horário",
+      "description": "Horários de trabalho da equipe",
+      "type": "object",
+      "properties": {
+        "arrival": { "type": "string", "description": "Horário de chegada" },
+        "productionStart": { "type": "string", "description": "Início da produção" },
+        "departure": { "type": "string", "description": "Horário de saída" },
+        "specialNote": { "type": "string", "description": "Aviso ou nota especial de horário" }
+      }
+    },
+    "userProfile": {
+      "title": "Perfil do Usuário",
+      "description": "Informações de perfil e permissões",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "staff"] }
+      },
+      "required": ["email", "role"]
+    },
+    "birthday": {
+      "title": "Aniversariante",
+      "description": "Aniversariantes do mês",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Nome do aniversariante" },
+        "day": { "type": "integer", "description": "Dia do aniversário" },
+        "month": { "type": "string", "description": "Mês do aniversário" },
+        "role": { "type": "string", "description": "Cargo ou relação (ex: Funcionário, Aluno)" }
+      },
+      "required": ["name", "day", "month"]
+    }
+  },
+  "firestore": {
+    "menu": {
+      "schema": "menu",
+      "description": "Coleção de itens do cardápio"
+    },
+    "schools": {
+      "schema": "school",
+      "description": "Coleção de escolas atendidas"
+    },
+    "notices": {
+      "schema": "notice",
+      "description": "Coleção de avisos da cozinha"
+    },
+    "birthdays": {
+      "schema": "birthday",
+      "description": "Coleção de aniversariantes"
+    },
+    "settings/schedule": {
+      "schema": "schedule",
+      "description": "Documento único com os horários de trabalho"
+    },
+    "users": {
+      "schema": "userProfile",
+      "description": "Coleção de perfis de usuários"
+    }
+  }
+}

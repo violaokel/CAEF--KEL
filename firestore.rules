@@ -1,0 +1,144 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: menu
+// Fields:
+//   - dayOfWeek: string (required)
+//   - mainDish: string (required)
+//   - sideDish: string (optional)
+//   - dessert: string (optional)
+//
+// Collection: schools
+// Fields:
+//   - name: string (required)
+//   - morningCount: int (required)
+//   - afternoonCount: int (required)
+//   - nightCount: int (required)
+//
+// Collection: notices
+// Fields:
+//   - title: string (required)
+//   - content: string (required)
+//   - createdAt: timestamp (required)
+//   - authorId: string (required)
+//
+// Document: settings/schedule
+// Fields:
+//   - arrival: string
+//   - productionStart: string
+//   - departure: string
+//   - specialNote: string
+//
+// Collection: users
+// Fields:
+//   - email: string (required)
+//   - role: string (required, 'admin' or 'staff')
+//
+// Collection: birthdays
+// Fields:
+//   - name: string (required)
+//   - day: int (required)
+//   - month: string (required)
+//   - role: string (optional)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email == "violaokel@gmail.com" && 
+             request.auth.token.email_verified == true;
+    }
+
+    function isValidMenu(data) {
+      return data.keys().hasAll(['dayOfWeek', 'mainDish']) &&
+             data.dayOfWeek is string && data.dayOfWeek.size() > 0 &&
+             data.mainDish is string && data.mainDish.size() > 0;
+    }
+
+    function isValidSchool(data) {
+      return data.keys().hasAll(['name', 'morningCount', 'afternoonCount', 'nightCount']) &&
+             data.name is string && data.name.size() > 0 &&
+             data.morningCount is int && data.afternoonCount is int && data.nightCount is int;
+    }
+
+    function isValidNotice(data) {
+      return data.keys().hasAll(['title', 'content', 'createdAt', 'authorId']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 2000 &&
+             data.createdAt is timestamp &&
+             data.authorId == request.auth.uid;
+    }
+
+    function isValidSchedule(data) {
+      return data.keys().hasAny(['arrival', 'productionStart', 'departure', 'specialNote']);
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role']) &&
+             data.email is string &&
+             data.role in ['admin', 'staff'];
+    }
+
+    function isValidBirthday(data) {
+      return data.keys().hasAll(['name', 'day', 'month']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.day is int && data.day >= 1 && data.day <= 31 &&
+             data.month is string && data.month.size() > 0;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidUser(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /menu/{menuId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidMenu(request.resource.data);
+    }
+
+    match /schools/{schoolId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidSchool(request.resource.data);
+    }
+
+    match /notices/{noticeId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidNotice(request.resource.data);
+      allow update: if isAdmin() && isValidNotice(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /settings/schedule {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidSchedule(request.resource.data);
+    }
+
+    match /birthdays/{birthdayId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidBirthday(request.resource.data);
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
