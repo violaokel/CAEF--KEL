@@ -1155,7 +1155,7 @@ export default function App() {
     return (
       <div className="fixed inset-0 bg-emerald-50 flex items-center justify-center">
         <motion.div 
-          animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+          animate={{ scale: [1, 1.1, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
           className="w-16 h-16 bg-emerald-600 rounded-3xl shadow-xl flex items-center justify-center"
         >
